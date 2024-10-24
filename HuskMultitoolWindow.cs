@@ -11,10 +11,11 @@ public class HuskMultitoolWindow : EditorWindow
     private float delayBetweenMessages = 5f;
     private float nextSendTime = 0f;
 
-    private string githubRawUrl = "https://raw.githubusercontent.com/HusksMultitool/HusksMultitool/refs/heads/main/HuskMultitoolWindow.cs";
+    private string githubRawImageUrl = "https://raw.githubusercontent.com/YourUser/YourRepo/main/path/to/your/image.png"; // Ersetze dies mit der URL deines Bildes
     private bool isUpdating = false;
     private UnityWebRequest currentRequest;
     private bool isFirstOpen = true;
+    private Texture2D backgroundTexture;
 
     [MenuItem("Tools/Husk Multitool")]
     public static void ShowWindow()
@@ -25,6 +26,7 @@ public class HuskMultitoolWindow : EditorWindow
 
     private void OnEnable()
     {
+        DownloadBackgroundImage();
         if (isFirstOpen)
         {
             string projectName = Application.productName;
@@ -33,8 +35,40 @@ public class HuskMultitoolWindow : EditorWindow
         }
     }
 
+    private void DownloadBackgroundImage()
+    {
+        currentRequest = UnityWebRequestTexture.GetTexture(githubRawImageUrl);
+        currentRequest.SendWebRequest();
+        EditorApplication.update += UpdateCheck;
+    }
+
+    private void UpdateCheck()
+    {
+        if (currentRequest.isDone)
+        {
+            if (currentRequest.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError("Error downloading image: " + currentRequest.error);
+            }
+            else
+            {
+                backgroundTexture = DownloadHandlerTexture.GetContent(currentRequest);
+                Debug.Log("Background image downloaded successfully!");
+            }
+
+            currentRequest.Dispose();
+            EditorApplication.update -= UpdateCheck;
+        }
+    }
+
     private void OnGUI()
     {
+        // Hintergrund zeichnen
+        if (backgroundTexture != null)
+        {
+            GUI.DrawTexture(new Rect(0, 0, position.width, position.height), backgroundTexture);
+        }
+
         GUILayout.Label("Send a message to Discord", EditorStyles.boldLabel);
         message = EditorGUILayout.TextField("Message:", message);
 
@@ -141,12 +175,12 @@ public class HuskMultitoolWindow : EditorWindow
         isUpdating = true;
 
         Debug.Log("Checking for updates...");
-        currentRequest = UnityWebRequest.Get(githubRawUrl);
+        currentRequest = UnityWebRequest.Get("https://raw.githubusercontent.com/HusksMultitool/HusksMultitool/refs/heads/main/HuskMultitoolWindow.cs");
         currentRequest.SendWebRequest();
-        EditorApplication.update += UpdateCheck;
+        EditorApplication.update += UpdateCheckForUpdates;
     }
 
-    private void UpdateCheck()
+    private void UpdateCheckForUpdates()
     {
         if (currentRequest.isDone)
         {
@@ -174,7 +208,7 @@ public class HuskMultitoolWindow : EditorWindow
 
             isUpdating = false;
             currentRequest.Dispose();
-            EditorApplication.update -= UpdateCheck;
+            EditorApplication.update -= UpdateCheckForUpdates;
         }
     }
 }
