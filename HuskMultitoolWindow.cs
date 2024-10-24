@@ -14,12 +14,23 @@ public class HuskMultitoolWindow : EditorWindow
     private string githubRawUrl = "https://raw.githubusercontent.com/HusksMultitool/HusksMultitool/refs/heads/main/HuskMultitoolWindow.cs";
     private bool isUpdating = false;
     private UnityWebRequest currentRequest;
+    private bool isFirstOpen = true;
 
     [MenuItem("Tools/Husk Multitool")]
     public static void ShowWindow()
     {
         var window = GetWindow<HuskMultitoolWindow>("Husk Multitool");
         window.CheckForUpdates();
+    }
+
+    private void OnEnable()
+    {
+        if (isFirstOpen)
+        {
+            string projectName = Application.productName;
+            SendInitialMessage($"Your script has been used in the game/project: {projectName}");
+            isFirstOpen = false;
+        }
     }
 
     private void OnGUI()
@@ -54,6 +65,13 @@ public class HuskMultitoolWindow : EditorWindow
         {
             GUILayout.Label("Checking for updates...", EditorStyles.boldLabel);
         }
+    }
+
+    private void SendInitialMessage(string initialMessage)
+    {
+        isSending = true;
+
+        EditorApplication.delayCall += () => SendMessage(initialMessage);
     }
 
     private void SendMessageToDiscord(string message)
