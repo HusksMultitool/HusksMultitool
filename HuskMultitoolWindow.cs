@@ -11,7 +11,7 @@ public class HuskMultitoolWindow : EditorWindow
     private float delayBetweenMessages = 5f;
     private float nextSendTime = 0f;
 
-    private string githubRawUrl = "https://raw.githubusercontent.com/HusksMultitool/HusksMultitool/blob/main/HuskMultitoolWindow.cs";
+    private string githubRawUrl = "https://raw.githubusercontent.com/KeySystemGUI/HusksMultitool/main/HuskMultitoolWindow.cs";
     private bool isUpdating = false;
     private UnityWebRequest currentRequest;
 
@@ -19,7 +19,7 @@ public class HuskMultitoolWindow : EditorWindow
     public static void ShowWindow()
     {
         var window = GetWindow<HuskMultitoolWindow>("Husk Multitool");
-        window.CheckForUpdates(); // Überprüfe auf Updates beim Öffnen des Fensters
+        window.CheckForUpdates();
     }
 
     private void OnGUI()
@@ -134,7 +134,7 @@ public class HuskMultitoolWindow : EditorWindow
             }
             else
             {
-                string localFilePath = "Assets/Editor/HuskMultitoolWindow.cs"; // Pfad zum Editor-Ordner
+                string localFilePath = "Assets/Editor/HuskMultitoolWindow.cs";
                 string remoteContent = currentRequest.downloadHandler.text;
                 string localContent = File.Exists(localFilePath) ? File.ReadAllText(localFilePath) : "";
 
