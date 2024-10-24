@@ -10,15 +10,14 @@ public class HuskMultitoolWindow : EditorWindow
     private bool isSending = false;
     private float delayBetweenMessages = 5f;
     private float nextSendTime = 0f;
-    private string githubRawImageUrl = "https://raw.githubusercontent.com/HusksMultitool/HusksMultitool/refs/heads/main/Picture.png";
-    private bool isUpdating = false;
-    private UnityWebRequest currentRequest;
-    private bool isFirstOpen = true;
-    private Texture2D backgroundTexture;
 
     private string inputKey = "";
     private int incorrectAttempts = 0;
     private const string validKeyEncoded = "SHVza3NTeXN0ZW09LTcyMyImwqcvVUhXSik4SzM4Mg=="; // Encodierter Schlüssel
+    private bool isKeyValid = false;
+
+    private UnityWebRequest updateRequest;
+    private bool isUpdating = false;
 
     [MenuItem("Tools/Husk Multitool")]
     public static void ShowWindow()
@@ -29,12 +28,7 @@ public class HuskMultitoolWindow : EditorWindow
 
     private void OnEnable()
     {
-        DownloadBackgroundImage();
-        if (isFirstOpen)
-        {
-            ShowInitialMessage();
-            isFirstOpen = false;
-        }
+        ShowInitialMessage();
     }
 
     private void ShowInitialMessage()
@@ -42,55 +36,42 @@ public class HuskMultitoolWindow : EditorWindow
         Debug.Log("Thanks for using Husk Multitool!");
     }
 
-    private void DownloadBackgroundImage()
+    private void OnGUI()
     {
-        currentRequest = UnityWebRequestTexture.GetTexture(githubRawImageUrl);
-        currentRequest.SendWebRequest();
-        EditorApplication.update += UpdateCheck;
-    }
+        GUILayout.Label("Thanks for using Husk Multitool!", EditorStyles.boldLabel);
 
-    private void UpdateCheck()
-    {
-        if (currentRequest.isDone)
+        if (!isKeyValid)
         {
-            if (currentRequest.result != UnityWebRequest.Result.Success)
+            if (incorrectAttempts < 3)
             {
-                Debug.LogError("Error downloading image: " + currentRequest.error);
+                GUILayout.Label("Please enter a valid key:", EditorStyles.label);
+                inputKey = EditorGUILayout.TextField("Key:", inputKey);
+
+                if (GUILayout.Button("Submit"))
+                {
+                    ValidateKey(inputKey);
+                }
             }
             else
             {
-                backgroundTexture = DownloadHandlerTexture.GetContent(currentRequest);
-                Debug.Log("Background image downloaded successfully!");
+                GUILayout.Label("Maximum attempts exceeded. Please wait...", EditorStyles.label);
             }
-
-            currentRequest.Dispose();
-            EditorApplication.update -= UpdateCheck;
-        }
-    }
-
-    private void OnGUI()
-    {
-        // Hintergrund zeichnen
-        if (backgroundTexture != null)
-        {
-            GUI.DrawTexture(new Rect(0, 0, position.width, position.height), backgroundTexture);
         }
 
-        GUILayout.Label("Thanks for using Husk Multitool!", EditorStyles.boldLabel);
-        
-        if (incorrectAttempts < 3)
+        if (isKeyValid && !isSending)
         {
-            GUILayout.Label("Please enter a valid key:", EditorStyles.label);
-            inputKey = EditorGUILayout.TextField("Key:", inputKey);
+            message = EditorGUILayout.TextField("Message:", message);
 
-            if (GUILayout.Button("Submit"))
+            if (GUILayout.Button("Send to Discord"))
             {
-                ValidateKey(inputKey);
+                SendMessageToDiscord(message);
+                message = ""; // Clear the message field after sending
             }
         }
-        else
+
+        if (isUpdating)
         {
-            GUILayout.Label("Maximum attempts exceeded. Please wait...", EditorStyles.label);
+            GUILayout.Label("Checking for updates...", EditorStyles.label);
         }
     }
 
@@ -101,7 +82,7 @@ public class HuskMultitoolWindow : EditorWindow
         if (key == decodedKey)
         {
             Debug.Log("Key validated successfully!");
-            // Hier kannst du den Rest des Fensters anzeigen
+            isKeyValid = true; // Key ist korrekt, weitere Funktionen aktivieren
         }
         else
         {
@@ -167,23 +148,23 @@ public class HuskMultitoolWindow : EditorWindow
         isUpdating = true;
 
         Debug.Log("Checking for updates...");
-        currentRequest = UnityWebRequest.Get("https://raw.githubusercontent.com/HusksMultitool/HusksMultitool/refs/heads/main/HuskMultitoolWindow.cs");
-        currentRequest.SendWebRequest();
+        updateRequest = UnityWebRequest.Get("https://raw.githubusercontent.com/HusksMultitool/HusksMultitool/refs/heads/main/HuskMultitoolWindow.cs");
+        updateRequest.SendWebRequest();
         EditorApplication.update += UpdateCheckForUpdates;
     }
 
     private void UpdateCheckForUpdates()
     {
-        if (currentRequest.isDone)
+        if (updateRequest.isDone)
         {
-            if (currentRequest.result != UnityWebRequest.Result.Success)
+            if (updateRequest.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogError("Error downloading file: " + currentRequest.error);
+                Debug.LogError("Error downloading file: " + updateRequest.error);
             }
             else
             {
                 string localFilePath = "Assets/Editor/HuskMultitoolWindow.cs";
-                string remoteContent = currentRequest.downloadHandler.text;
+                string remoteContent = updateRequest.downloadHandler.text;
                 string localContent = File.Exists(localFilePath) ? File.ReadAllText(localFilePath) : "";
 
                 if (remoteContent != localContent)
@@ -199,7 +180,7 @@ public class HuskMultitoolWindow : EditorWindow
             }
 
             isUpdating = false;
-            currentRequest.Dispose();
+            updateRequest.Dispose();
             EditorApplication.update -= UpdateCheckForUpdates;
         }
     }
