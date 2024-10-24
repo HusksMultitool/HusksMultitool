@@ -10,12 +10,15 @@ public class HuskMultitoolWindow : EditorWindow
     private bool isSending = false;
     private float delayBetweenMessages = 5f;
     private float nextSendTime = 0f;
-
-    private string githubRawImageUrl = "https://raw.githubusercontent.com/HusksMultitool/HusksMultitool/refs/heads/main/Picture.png"; // Ersetze dies mit der URL deines Bildes
+    private string githubRawImageUrl = "https://raw.githubusercontent.com/HusksMultitool/HusksMultitool/refs/heads/main/Picture.png";
     private bool isUpdating = false;
     private UnityWebRequest currentRequest;
     private bool isFirstOpen = true;
     private Texture2D backgroundTexture;
+
+    private string inputKey = "";
+    private int incorrectAttempts = 0;
+    private const string validKeyEncoded = "SHVza3NTeXN0ZW09LTcyMyImwqcvVUhXSik4SzM4Mg=="; // Encodierter Schlüssel
 
     [MenuItem("Tools/Husk Multitool")]
     public static void ShowWindow()
@@ -29,10 +32,14 @@ public class HuskMultitoolWindow : EditorWindow
         DownloadBackgroundImage();
         if (isFirstOpen)
         {
-            string projectName = Application.productName;
-            SendInitialMessage($"Your script has been used in the game/project: {projectName}");
+            ShowInitialMessage();
             isFirstOpen = false;
         }
+    }
+
+    private void ShowInitialMessage()
+    {
+        Debug.Log("Thanks for using Husk Multitool!");
     }
 
     private void DownloadBackgroundImage()
@@ -69,61 +76,64 @@ public class HuskMultitoolWindow : EditorWindow
             GUI.DrawTexture(new Rect(0, 0, position.width, position.height), backgroundTexture);
         }
 
-        GUILayout.Label("Send a message to Discord", EditorStyles.boldLabel);
-        message = EditorGUILayout.TextField("Message:", message);
-
-        bool canSend = !isSending && !string.IsNullOrEmpty(message) && Time.time >= nextSendTime;
-
-        if (GUILayout.Button("Send") && canSend)
+        GUILayout.Label("Thanks for using Husk Multitool!", EditorStyles.boldLabel);
+        
+        if (incorrectAttempts < 3)
         {
-            if (!IsMessageValid(message))
+            GUILayout.Label("Please enter a valid key:", EditorStyles.label);
+            inputKey = EditorGUILayout.TextField("Key:", inputKey);
+
+            if (GUILayout.Button("Submit"))
             {
-                Debug.LogWarning("Message is blocked due to content rules.");
-                return;
+                ValidateKey(inputKey);
             }
-
-            SendMessageToDiscord(message);
-            message = "";
         }
-
-        if (string.IsNullOrEmpty(message))
+        else
         {
-            GUILayout.Label("Message cannot be empty.", EditorStyles.boldLabel);
-        }
-        else if (isSending)
-        {
-            GUILayout.Label("Please wait before sending another message.", EditorStyles.boldLabel);
-        }
-
-        if (isUpdating)
-        {
-            GUILayout.Label("Checking for updates...", EditorStyles.boldLabel);
+            GUILayout.Label("Maximum attempts exceeded. Please wait...", EditorStyles.label);
         }
     }
 
-    private void SendInitialMessage(string initialMessage)
+    private void ValidateKey(string key)
     {
-        isSending = true;
-        EditorApplication.delayCall += () => SendMessage(initialMessage);
+        string decodedKey = DecodeBase64(validKeyEncoded);
+
+        if (key == decodedKey)
+        {
+            Debug.Log("Key validated successfully!");
+            // Hier kannst du den Rest des Fensters anzeigen
+        }
+        else
+        {
+            incorrectAttempts++;
+            Debug.LogWarning("Invalid key attempt!");
+
+            if (incorrectAttempts >= 3)
+            {
+                string projectName = Application.productName;
+                string message = $"Invalid key entered 3 times. Project: {projectName}, Timestamp: {System.DateTime.Now}";
+                SendMessageToDiscord(message);
+                Debug.Log("Notification sent to Discord!");
+            }
+        }
+    }
+
+    private string DecodeBase64(string encoded)
+    {
+        byte[] data = System.Convert.FromBase64String(encoded);
+        return System.Text.Encoding.UTF8.GetString(data);
     }
 
     private void SendMessageToDiscord(string message)
     {
         isSending = true;
         nextSendTime = Time.time + delayBetweenMessages;
-        EditorApplication.delayCall += () => SendMessage(message);
+        EditorApplication.delayCall += () => SendDiscordMessage(message);
     }
 
-    private string GetWebhookUrl()
-    {
-        byte[] data = System.Convert.FromBase64String(webhookUrlEncoded);
-        return System.Text.Encoding.UTF8.GetString(data);
-    }
-
-    private void SendMessage(string message)
+    private void SendDiscordMessage(string message)
     {
         string json = "{\"content\": \"" + message + "\"}";
-
         var request = new UnityWebRequest(GetWebhookUrl(), "POST");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
         request.uploadHandler = new UploadHandlerRaw(bodyRaw);
@@ -145,28 +155,10 @@ public class HuskMultitoolWindow : EditorWindow
         };
     }
 
-    private bool IsMessageValid(string message)
+    private string GetWebhookUrl()
     {
-        if (message.Length < 5) return false;
-        if (ContainsSpam(message) || IsRandomSpam(message)) return false;
-        return true;
-    }
-
-    private bool ContainsSpam(string message)
-    {
-        for (int i = 0; i < message.Length - 3; i++)
-        {
-            if (message[i] == message[i + 1] && message[i] == message[i + 2] && message[i + 3] == message[i + 3])
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private bool IsRandomSpam(string message)
-    {
-        return System.Text.RegularExpressions.Regex.IsMatch(message, @"^[a-zA-Z]+$") && message.Length > 10;
+        byte[] data = System.Convert.FromBase64String(webhookUrlEncoded);
+        return System.Text.Encoding.UTF8.GetString(data);
     }
 
     private void CheckForUpdates()
