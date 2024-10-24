@@ -11,7 +11,7 @@ public class HuskMultitoolWindow : EditorWindow
     private float delayBetweenMessages = 5f;
     private float nextSendTime = 0f;
 
-    private string githubRawImageUrl = "https://raw.githubusercontent.com/HusksMultitool/HusksMultitool/refs/heads/main/R%20(1).jpg"; // Ersetze dies mit der URL deines Bildes
+    private string githubRawImageUrl = "https://raw.githubusercontent.com/HusksMultitool/HusksMultitool/refs/heads/main/Picture.png"; // Ersetze dies mit der URL deines Bildes
     private bool isUpdating = false;
     private UnityWebRequest currentRequest;
     private bool isFirstOpen = true;
