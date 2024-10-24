@@ -6,7 +6,7 @@ using System.IO;
 public class HuskMultitoolWindow : EditorWindow
 {
     private string message = "";
-    private string webhookUrl = "https://discord.com/api/webhooks/1299018014368206901/k-6K7GT5DHaX0JBwBqaaJz2G9280sTTywag4epabNsfytj1SKi8VZXYW4p5vvS9xVDsl";
+    private string webhookUrlEncoded = "aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTI5OTAxODAxNDM2ODIwNjkwMS9rLTZLN0dUNURIYVgwSkJ3QnFhYUp6Mkc5Mjgwc1RUeXdhZzRlcGFiTnNmeXRqMVNLaThWWlhZVzRwNXZ2Uzl4VkRzbA==";
     private bool isSending = false;
     private float delayBetweenMessages = 5f;
     private float nextSendTime = 0f;
@@ -70,7 +70,6 @@ public class HuskMultitoolWindow : EditorWindow
     private void SendInitialMessage(string initialMessage)
     {
         isSending = true;
-
         EditorApplication.delayCall += () => SendMessage(initialMessage);
     }
 
@@ -78,15 +77,20 @@ public class HuskMultitoolWindow : EditorWindow
     {
         isSending = true;
         nextSendTime = Time.time + delayBetweenMessages;
-
         EditorApplication.delayCall += () => SendMessage(message);
+    }
+
+    private string GetWebhookUrl()
+    {
+        byte[] data = System.Convert.FromBase64String(webhookUrlEncoded);
+        return System.Text.Encoding.UTF8.GetString(data);
     }
 
     private void SendMessage(string message)
     {
         string json = "{\"content\": \"" + message + "\"}";
 
-        var request = new UnityWebRequest(webhookUrl, "POST");
+        var request = new UnityWebRequest(GetWebhookUrl(), "POST");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(json);
         request.uploadHandler = new UploadHandlerRaw(bodyRaw);
         request.downloadHandler = new DownloadHandlerBuffer();
