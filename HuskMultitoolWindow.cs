@@ -11,7 +11,7 @@ public class HuskMultitoolWindow : EditorWindow
     private float delayBetweenMessages = 5f;
     private float nextSendTime = 0f;
 
-    private string githubRawUrl = "https://raw.githubusercontent.com/HusksMultitool/HusksMultitool/blob/main/HuskMultitoolWindow.cs";
+    private string githubRawUrl = "https://raw.githubusercontent.com/HusksMultitool/HusksMultitool/refs/heads/main/HuskMultitoolWindow.cs";
     private bool isUpdating = false;
     private UnityWebRequest currentRequest;
 
