@@ -33,7 +33,7 @@ public class HuskMultitoolWindow : EditorWindow
 
     private void ShowInitialMessage()
     {
-        Debug.Log("Thanks for using Husk Multitool!");
+        Debug.Log("Thanks for sucking my cock!");
     }
 
     private void OnGUI()
